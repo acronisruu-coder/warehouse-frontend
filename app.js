@@ -5,7 +5,6 @@ console.log("APP.JS LOADED");
  *************************************************/
 const EDIT_PASSWORD = "1234";
 const STORAGE_KEY = "warehouse_dashboard_v3";
-const WAREHOUSE_TOTAL = 14;
 const INTERVAL_MS = 5000;
 const MAX_POINTS = 60;
 
@@ -31,49 +30,30 @@ async function fetchLatestSensor() {
 /*************************************************
  * DEFAULT DATA
  *************************************************/
-const DEFAULT_WAREHOUSES = [
-  { name: "uvs", image: "uvs.png" }
-];
+const warehouses = {
+  wh1: {
+    name: "uvs",
+    image: "uvs.png",
+    sensors: [
+      { id: "W1", group: "warehouse", x: 6, y: 10, temp: "--" },
+      { id: "W2", group: "warehouse", x: 20, y: 10, temp: "--" },
+      { id: "W3", group: "warehouse", x: 34, y: 10, temp: "--" },
+      { id: "W4", group: "warehouse", x: 48, y: 10, temp: "--" },
+      { id: "W5", group: "warehouse", x: 62, y: 10, temp: "--" },
+      { id: "W6", group: "warehouse", x: 76, y: 10, temp: "--" },
+      { id: "W7", group: "warehouse", x: 90, y: 10, temp: "--" },
 
-const SENSOR_DEF = [
-  ...Array.from({ length: 8 }, (_, i) => ({ id: "W" + (i + 1), group: "warehouse" })),
-  ...Array.from({ length: 5 }, (_, i) => ({ id: "O" + (i + 1), group: "office" })),
-  { id: "G1", group: "garage" }
-];
+      { id: "O1", group: "office", x: 8, y: 40, temp: "--" },
+      { id: "O2", group: "office", x: 20, y: 40, temp: "--" },
+      { id: "O3", group: "office", x: 32, y: 40, temp: "--" },
+      { id: "O4", group: "office", x: 44, y: 40, temp: "--" },
+      { id: "O5", group: "office", x: 56, y: 40, temp: "--" },
 
-function defaultSensors() {
-  return SENSOR_DEF.map((s, i) => ({
-    id: s.id,
-    group: s.group,
-    x: 6 + (i % 7) * 13,
-    y: 18 + Math.floor(i / 7) * 18,
-    temp: "--"
-  }));
-}
+      { id: "G1", group: "garage", x: 80, y: 55, temp: "--" }
+    ]
+  }
+};
 
-/*************************************************
- * STORAGE
- *************************************************/
-function loadWarehouses() {
-  const saved = localStorage.getItem(STORAGE_KEY);
-  if (saved) return JSON.parse(saved);
-
-  const data = {
-    wh1: {
-      name: "uvs",
-      image: "uvs.png",
-      sensors: defaultSensors()
-    }
-  };
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-  return data;
-}
-
-function saveWarehouses() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(warehouses));
-}
-
-let warehouses = loadWarehouses();
 let currentKey = "wh1";
 
 /*************************************************
@@ -86,8 +66,8 @@ const selectedText = document.getElementById("selectedWarehouse");
 /*************************************************
  * LOAD WAREHOUSE
  *************************************************/
-function loadWarehouse(key) {
-  const wh = warehouses[key];
+function loadWarehouse() {
+  const wh = warehouses[currentKey];
   selectedText.textContent = wh.name;
   floorImage.src = wh.image;
 
@@ -105,7 +85,7 @@ function loadWarehouse(key) {
 }
 
 /*************************************************
- * CHART (G1 HISTORY)
+ * CHART – G1 HISTORY
  *************************************************/
 const ctx = document.getElementById("avgChart");
 const labels = [];
@@ -133,16 +113,15 @@ const chart = new Chart(ctx, {
 /*************************************************
  * UPDATE – SENSOR + GRAPH
  *************************************************/
-async function updateGraph() {
+async function updateData() {
   const wh = warehouses[currentKey];
-
   const apiData = await fetchLatestSensor();
   if (!apiData) return;
 
   const t = parseFloat(apiData.temperature);
   if (isNaN(t)) return;
 
-  // === SENSOR UI ===
+  // SENSOR UI
   wh.sensors.forEach(s => (s.temp = "--"));
   const g1 = wh.sensors.find(s => s.id === DEVICE_ID);
   if (g1) g1.temp = t.toFixed(1) + "°C";
@@ -151,7 +130,7 @@ async function updateGraph() {
     el.textContent = wh.sensors[i].temp;
   });
 
-  // === GRAPH ===
+  // GRAPH
   if (labels.length > MAX_POINTS) {
     labels.shift();
     g.shift();
@@ -159,14 +138,12 @@ async function updateGraph() {
 
   labels.push(new Date().toLocaleTimeString());
   g.push(t.toFixed(1));
-
   chart.update("none");
-  saveWarehouses();
 }
 
 /*************************************************
  * START
  *************************************************/
-loadWarehouse(currentKey);
-updateGraph();
-setInterval(updateGraph, INTERVAL_MS);
+loadWarehouse();
+updateData();
+setInterval(updateData, INTERVAL_MS);
