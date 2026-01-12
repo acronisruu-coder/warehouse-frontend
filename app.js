@@ -1,3 +1,4 @@
+console.log("APP.JS LOADED");
 /*************************************************
  * CONFIG
  *************************************************/
@@ -288,4 +289,5 @@ async function updateG1() {
 
 updateG1();
 setInterval(updateG1, 5000);
+
 
