@@ -1,42 +1,52 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Warehouse Temperature Dashboard</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="style.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- STYLE -->
+  <link rel="stylesheet" href="style.css" />
+
+  <!-- CHART -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
 <body class="view-mode">
 
+<!-- EDIT BAR -->
 <div id="editBar">
   <button id="editToggle" class="edit-btn">Edit mode: OFF</button>
 </div>
 
 <h2>Temperature Monitoring Dashboard</h2>
 
+<!-- WAREHOUSE DROPDOWN -->
 <div class="warehouse-dropdown">
   <div id="dropdownHeader" class="dropdown-header">
-    <span id="selectedWarehouse">Warehouse 1</span>
+    <span id="selectedWarehouse">uvs</span>
     <span class="arrow">▼</span>
   </div>
   <div id="dropdownList" class="dropdown-list"></div>
 </div>
 
+<!-- EDIT CONTROLS -->
 <div class="edit-controls">
-  <input id="warehouseNameInput" placeholder="Warehouse name">
-  <input type="file" id="imageUpload" accept="image/*">
+  <input id="warehouseNameInput" placeholder="Warehouse name" />
+  <input type="file" id="imageUpload" accept="image/*" />
 </div>
 
+<!-- FLOOR -->
 <div id="floor" class="floor">
-  <img id="floorImage">
+  <img id="floorImage" />
 </div>
 
+<!-- CHART -->
 <div class="chart-box">
   <canvas id="avgChart"></canvas>
 </div>
 
+<!-- APP -->
 <script src="app.js"></script>
 </body>
 </html>
