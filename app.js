@@ -7,11 +7,10 @@ const EDIT_PASSWORD = "1234";
 const STORAGE_KEY = "warehouse_dashboard_v3";
 const WAREHOUSE_TOTAL = 14;
 const INTERVAL_MS = 5000;
-const MAX_POINTS = 60;
 
 // 🔑 API
 const API_URL = "https://warehouse-backend-n4yp.onrender.com/api/latest";
-const DEVICE_ID = "G1"; // ← ЭНЭ SENSOR-ООР FRONTEND ХОЛБОНО
+const DEVICE_ID = "G1";
 
 /*************************************************
  * API (DEVICE_ID → LAST RECORD)
@@ -24,10 +23,7 @@ async function fetchLatestSensor() {
     const arr = await res.json();
     if (!Array.isArray(arr)) return null;
 
-    // ✅ G1 device-ийг олж авна
-    const sensor = arr.find(d => d.device_id === DEVICE_ID);
-    return sensor || null;
-
+    return arr.find(d => d.device_id === DEVICE_ID) || null;
   } catch (err) {
     console.error("Fetch API failed:", err);
     return null;
@@ -199,30 +195,24 @@ function enableDrag(el, data) {
 }
 
 /*************************************************
- * UPDATE GRAPH (G1 DATA)
+ * UPDATE – ЗӨВХӨН G1
  *************************************************/
 async function updateGraph() {
   const wh = warehouses[currentKey];
 
-  // 1️⃣ API-аас G1 data авах
   const apiData = await fetchLatestSensor();
   if (!apiData) return;
 
   const t = parseFloat(apiData.temperature);
-  const valid = !isNaN(t);
+  if (isNaN(t)) return;
 
-  // 2️⃣ ЭХЛЭЭД БҮХ SENSOR-ЫГ "--" БОЛГОНО
-  wh.sensors.forEach(s => {
-    s.temp = "--";
-  });
+  // бүх sensor "--"
+  wh.sensors.forEach(s => (s.temp = "--"));
 
-  // 3️⃣ ЗӨВХӨН G1-Д УТГА ӨГНӨ
+  // зөвхөн G1
   const g1 = wh.sensors.find(s => s.id === DEVICE_ID);
-  if (g1 && valid) {
-    g1.temp = t.toFixed(1) + "°C";
-  }
+  if (g1) g1.temp = t.toFixed(1) + "°C";
 
-  // 4️⃣ UI-г ШИНЭЧИЛНЭ
   document.querySelectorAll(".sensor span").forEach((el, i) => {
     el.textContent = wh.sensors[i].temp;
   });
@@ -230,12 +220,10 @@ async function updateGraph() {
   saveWarehouses();
 }
 
-
 /*************************************************
- * START
+ * START (ЗӨВ ДАРААЛАЛ!)
  *************************************************/
-setInterval(updateGraph, INTERVAL_MS);
-updateGraph();
 renderDropdown();
 loadWarehouse(currentKey);
-
+updateGraph();
+setInterval(updateGraph, INTERVAL_MS);
