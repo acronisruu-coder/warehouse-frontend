@@ -203,24 +203,33 @@ function enableDrag(el, data) {
  *************************************************/
 async function updateGraph() {
   const wh = warehouses[currentKey];
+
+  // 1️⃣ API-аас G1 data авах
   const apiData = await fetchLatestSensor();
   if (!apiData) return;
 
   const t = parseFloat(apiData.temperature);
   const valid = !isNaN(t);
 
+  // 2️⃣ ЭХЛЭЭД БҮХ SENSOR-ЫГ "--" БОЛГОНО
   wh.sensors.forEach(s => {
-    if (s.id === DEVICE_ID) {
-      s.temp = valid ? t.toFixed(1) + "°C" : "--";
-    }
+    s.temp = "--";
   });
 
+  // 3️⃣ ЗӨВХӨН G1-Д УТГА ӨГНӨ
+  const g1 = wh.sensors.find(s => s.id === DEVICE_ID);
+  if (g1 && valid) {
+    g1.temp = t.toFixed(1) + "°C";
+  }
+
+  // 4️⃣ UI-г ШИНЭЧИЛНЭ
   document.querySelectorAll(".sensor span").forEach((el, i) => {
     el.textContent = wh.sensors[i].temp;
   });
 
   saveWarehouses();
 }
+
 
 /*************************************************
  * START
@@ -229,3 +238,4 @@ setInterval(updateGraph, INTERVAL_MS);
 updateGraph();
 renderDropdown();
 loadWarehouse(currentKey);
+
