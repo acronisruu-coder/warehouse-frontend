@@ -212,8 +212,11 @@ async function updateGraph() {
   let ws=[], os=[], gs=[];
   lastSensorTemps = [];
 
+  const apiData = await fetchLatestSensor();
+if (!apiData) return;
+  
   wh.sensors.forEach(s => {
-    const t = +(Math.random() * 6 + 18).toFixed(1); // 🔥 fake temp
+    const t = Number(apiData.temperature);
     s.temp = t + "°C";
 
     lastSensorTemps.push({ id: s.id, temp: t });
@@ -250,4 +253,5 @@ updateGraph();
 /* ===== START ===== */
 renderDropdown();
 loadWarehouse(currentKey);
+
 
