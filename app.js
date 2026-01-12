@@ -7,25 +7,23 @@ const EDIT_PASSWORD = "1234";
 const STORAGE_KEY = "warehouse_dashboard_v3";
 const WAREHOUSE_TOTAL = 14;
 const INTERVAL_MS = 5000;
+const MAX_POINTS = 60;
 
-// 🔑 API
 const API_URL = "https://warehouse-backend-n4yp.onrender.com/api/latest";
 const DEVICE_ID = "G1";
 
 /*************************************************
- * API (DEVICE_ID → LAST RECORD)
+ * API – G1 ONLY
  *************************************************/
 async function fetchLatestSensor() {
   try {
     const res = await fetch(API_URL);
-    if (!res.ok) throw new Error("API response error");
-
+    if (!res.ok) throw new Error("API error");
     const arr = await res.json();
     if (!Array.isArray(arr)) return null;
-
     return arr.find(d => d.device_id === DEVICE_ID) || null;
-  } catch (err) {
-    console.error("Fetch API failed:", err);
+  } catch (e) {
+    console.error("API fetch failed", e);
     return null;
   }
 }
@@ -34,20 +32,7 @@ async function fetchLatestSensor() {
  * DEFAULT DATA
  *************************************************/
 const DEFAULT_WAREHOUSES = [
-  { name: "uvs", image: "uvs.png" },
-  { name: "East Warehouse", image: "east.png" },
-  { name: "West Warehouse", image: "west.png" },
-  { name: "North Warehouse", image: "north.png" },
-  { name: "South Warehouse", image: "south.png" },
-  { name: "Cold Storage", image: "cold.png" },
-  { name: "Dry Storage", image: "dry.png" },
-  { name: "Spare Parts", image: "spare.png" },
-  { name: "Finished Goods", image: "finished.png" },
-  { name: "Raw Materials", image: "raw.png" },
-  { name: "Overflow 1", image: "overflow1.png" },
-  { name: "Overflow 2", image: "overflow2.png" },
-  { name: "Temporary Storage", image: "temporary.png" },
-  { name: "Backup Warehouse", image: "backup.png" }
+  { name: "uvs", image: "uvs.png" }
 ];
 
 const SENSOR_DEF = [
@@ -73,14 +58,13 @@ function loadWarehouses() {
   const saved = localStorage.getItem(STORAGE_KEY);
   if (saved) return JSON.parse(saved);
 
-  const data = {};
-  for (let i = 0; i < WAREHOUSE_TOTAL; i++) {
-    data["wh" + (i + 1)] = {
-      name: DEFAULT_WAREHOUSES[i].name,
-      image: DEFAULT_WAREHOUSES[i].image,
+  const data = {
+    wh1: {
+      name: "uvs",
+      image: "uvs.png",
       sensors: defaultSensors()
-    };
-  }
+    }
+  };
   localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
   return data;
 }
@@ -95,59 +79,16 @@ let currentKey = "wh1";
 /*************************************************
  * ELEMENTS
  *************************************************/
-const body = document.body;
-const editBtn = document.getElementById("editToggle");
-const nameInput = document.getElementById("warehouseNameInput");
-const imageUpload = document.getElementById("imageUpload");
 const floor = document.getElementById("floor");
 const floorImage = document.getElementById("floorImage");
-
-const dropdown = document.querySelector(".warehouse-dropdown");
-const dropdownHeader = document.getElementById("dropdownHeader");
-const dropdownList = document.getElementById("dropdownList");
 const selectedText = document.getElementById("selectedWarehouse");
-
-/*************************************************
- * EDIT MODE
- *************************************************/
-let editMode = false;
-editBtn.onclick = () => {
-  if (!editMode) {
-    if (prompt("Password:") !== EDIT_PASSWORD) return;
-    editMode = true;
-  } else editMode = false;
-
-  body.className = editMode ? "edit-mode" : "view-mode";
-  editBtn.textContent = editMode ? "Edit mode: ON" : "Edit mode: OFF";
-};
-
-/*************************************************
- * DROPDOWN
- *************************************************/
-function renderDropdown() {
-  dropdownList.innerHTML = "";
-  Object.keys(warehouses).forEach(k => {
-    const d = document.createElement("div");
-    d.textContent = warehouses[k].name;
-    d.onclick = () => {
-      loadWarehouse(k);
-      dropdown.classList.remove("dropdown-open");
-    };
-    dropdownList.appendChild(d);
-  });
-}
-dropdownHeader.onclick = () =>
-  dropdown.classList.toggle("dropdown-open");
 
 /*************************************************
  * LOAD WAREHOUSE
  *************************************************/
 function loadWarehouse(key) {
-  currentKey = key;
   const wh = warehouses[key];
-
   selectedText.textContent = wh.name;
-  nameInput.value = wh.name;
   floorImage.src = wh.image;
 
   document.querySelectorAll(".sensor").forEach(s => s.remove());
@@ -160,42 +101,37 @@ function loadWarehouse(key) {
     el.style.left = s.x + "%";
     el.style.top = s.y + "%";
     floor.appendChild(el);
-    enableDrag(el, s);
   });
 }
 
 /*************************************************
- * DRAG
+ * CHART (G1 HISTORY)
  *************************************************/
-function enableDrag(el, data) {
-  let dragging = false, ox = 0, oy = 0;
+const ctx = document.getElementById("avgChart");
+const labels = [];
+const g = [];
 
-  el.addEventListener("mousedown", e => {
-    if (!editMode) return;
-    dragging = true;
-    ox = e.offsetX;
-    oy = e.offsetY;
-  });
-
-  document.addEventListener("mousemove", e => {
-    if (!dragging) return;
-    const r = floor.getBoundingClientRect();
-    data.x = ((e.clientX - r.left - ox) / r.width) * 100;
-    data.y = ((e.clientY - r.top - oy) / r.height) * 100;
-    el.style.left = data.x + "%";
-    el.style.top = data.y + "%";
-  });
-
-  document.addEventListener("mouseup", () => {
-    if (dragging) {
-      dragging = false;
-      saveWarehouses();
-    }
-  });
-}
+const chart = new Chart(ctx, {
+  type: "line",
+  data: {
+    labels,
+    datasets: [
+      {
+        label: "Garage Avg (G1)",
+        data: g,
+        borderColor: "#9b59b6",
+        tension: 0.3
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    animation: false
+  }
+});
 
 /*************************************************
- * UPDATE – ЗӨВХӨН G1
+ * UPDATE – SENSOR + GRAPH
  *************************************************/
 async function updateGraph() {
   const wh = warehouses[currentKey];
@@ -206,10 +142,8 @@ async function updateGraph() {
   const t = parseFloat(apiData.temperature);
   if (isNaN(t)) return;
 
-  // бүх sensor "--"
+  // === SENSOR UI ===
   wh.sensors.forEach(s => (s.temp = "--"));
-
-  // зөвхөн G1
   const g1 = wh.sensors.find(s => s.id === DEVICE_ID);
   if (g1) g1.temp = t.toFixed(1) + "°C";
 
@@ -217,13 +151,22 @@ async function updateGraph() {
     el.textContent = wh.sensors[i].temp;
   });
 
+  // === GRAPH ===
+  if (labels.length > MAX_POINTS) {
+    labels.shift();
+    g.shift();
+  }
+
+  labels.push(new Date().toLocaleTimeString());
+  g.push(t.toFixed(1));
+
+  chart.update("none");
   saveWarehouses();
 }
 
 /*************************************************
- * START (ЗӨВ ДАРААЛАЛ!)
+ * START
  *************************************************/
-renderDropdown();
 loadWarehouse(currentKey);
 updateGraph();
 setInterval(updateGraph, INTERVAL_MS);
