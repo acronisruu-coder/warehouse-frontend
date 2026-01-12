@@ -17,8 +17,6 @@ async function fetchLatestSensor() {
   }
 }
 
-const API_URL = "https://warehouse-backend-n4yp.onrender.com/api/latest";
-
 /* ===== DEFAULT WAREHOUSES ===== */
 const DEFAULT_WAREHOUSES = [
   { name: "uvs", image: "uvs.png" },
@@ -266,6 +264,7 @@ updateGraph();
 /* ===== START ===== */
 renderDropdown();
 loadWarehouse(currentKey);
+
 
 
 
