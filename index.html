@@ -38,22 +38,9 @@
 </div>
 
 <script src="app.js"></script>
-  <script>
-console.log("TEST SCRIPT LOADED");
 
-fetch(API_URL)
-  .then(res => {
-    console.log("FETCH RESPONSE:", res.status);
-    return res.json();
-  })
-  .then(data => {
-    console.log("FRONTEND DATA:", data);
-  })
-  .catch(err => {
-    console.error("FETCH ERROR:", err);
-  });
-</script>
 </body>
 </html>
+
 
 
