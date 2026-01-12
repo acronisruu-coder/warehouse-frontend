@@ -227,8 +227,8 @@ async function updateGraph() {
 if (!apiData) return;
   
   wh.sensors.forEach(s => {
-    const t = Number(apiData.temperature);
-    s.temp = t + "°C";
+    const t = parseFloat(apiData.temperature);
+    s.temp = isNaN(t) ? "--" : t.toFixed(1) + "°C";
 
     lastSensorTemps.push({ id: s.id, temp: t });
 
@@ -264,6 +264,7 @@ updateGraph();
 /* ===== START ===== */
 renderDropdown();
 loadWarehouse(currentKey);
+
 
 
 
