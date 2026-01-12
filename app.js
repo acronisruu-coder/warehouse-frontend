@@ -9,18 +9,25 @@ const WAREHOUSE_TOTAL = 14;
 const INTERVAL_MS = 5000;
 const MAX_POINTS = 60;
 
+// 🔑 API
 const API_URL = "https://warehouse-backend-n4yp.onrender.com/api/latest";
+const DEVICE_ID = "G1"; // ← ЭНЭ SENSOR-ООР FRONTEND ХОЛБОНО
 
 /*************************************************
- * API (ARRAY → LAST RECORD)
+ * API (DEVICE_ID → LAST RECORD)
  *************************************************/
 async function fetchLatestSensor() {
   try {
     const res = await fetch(API_URL);
     if (!res.ok) throw new Error("API response error");
+
     const arr = await res.json();
-    if (!Array.isArray(arr) || arr.length === 0) return null;
-    return arr[0]; // хамгийн сүүлийн бичлэг
+    if (!Array.isArray(arr)) return null;
+
+    // ✅ G1 device-ийг олж авна
+    const sensor = arr.find(d => d.device_id === DEVICE_ID);
+    return sensor || null;
+
   } catch (err) {
     console.error("Fetch API failed:", err);
     return null;
@@ -137,7 +144,7 @@ dropdownHeader.onclick = () =>
   dropdown.classList.toggle("dropdown-open");
 
 /*************************************************
- * LOAD WAREHOUSE (ID ASSIGNED!)
+ * LOAD WAREHOUSE
  *************************************************/
 function loadWarehouse(key) {
   currentKey = key;
@@ -152,7 +159,7 @@ function loadWarehouse(key) {
   wh.sensors.forEach(s => {
     const el = document.createElement("div");
     el.className = `sensor ${s.group}`;
-    el.id = s.id; // ★ МАШ ЧУХАЛ
+    el.id = s.id;
     el.innerHTML = `${s.id}<br><span>${s.temp}</span>`;
     el.style.left = s.x + "%";
     el.style.top = s.y + "%";
@@ -192,43 +199,10 @@ function enableDrag(el, data) {
 }
 
 /*************************************************
- * CHART
- *************************************************/
-const ctx = document.getElementById("avgChart");
-const labels = [], w = [], o = [], g = [];
-let lastSensorTemps = [];
-
-const chart = new Chart(ctx, {
-  type: "line",
-  data: {
-    labels,
-    datasets: [
-      { label: "Warehouse Avg", data: w, borderColor: "#3498db" },
-      { label: "Office Avg", data: o, borderColor: "#2ecc71" },
-      { label: "Garage Avg", data: g, borderColor: "#9b59b6" }
-    ]
-  },
-  options: {
-    responsive: true,
-    animation: false,
-    plugins: {
-      tooltip: {
-        callbacks: {
-          afterBody: () => lastSensorTemps.map(s => `${s.id} : ${s.temp}`)
-        }
-      }
-    }
-  }
-});
-
-/*************************************************
- * UPDATE (ARRAY-SAFE)
+ * UPDATE GRAPH (G1 DATA)
  *************************************************/
 async function updateGraph() {
   const wh = warehouses[currentKey];
-  let ws = [], os = [], gs = [];
-  lastSensorTemps = [];
-
   const apiData = await fetchLatestSensor();
   if (!apiData) return;
 
@@ -236,31 +210,15 @@ async function updateGraph() {
   const valid = !isNaN(t);
 
   wh.sensors.forEach(s => {
-    s.temp = valid ? t.toFixed(1) + "°C" : "--";
-
-    lastSensorTemps.push({ id: s.id, temp: s.temp });
-
-    if (valid && s.group === "warehouse") ws.push(t);
-    if (valid && s.group === "office") os.push(t);
-    if (valid && s.group === "garage") gs.push(t);
+    if (s.id === DEVICE_ID) {
+      s.temp = valid ? t.toFixed(1) + "°C" : "--";
+    }
   });
 
   document.querySelectorAll(".sensor span").forEach((el, i) => {
     el.textContent = wh.sensors[i].temp;
   });
 
-  const avg = a => a.length ? (a.reduce((x,y)=>x+y,0)/a.length).toFixed(1) : null;
-
-  if (labels.length > MAX_POINTS) {
-    labels.shift(); w.shift(); o.shift(); g.shift();
-  }
-
-  labels.push(new Date().toLocaleTimeString());
-  w.push(avg(ws));
-  o.push(avg(os));
-  g.push(avg(gs));
-
-  chart.update("none");
   saveWarehouses();
 }
 
