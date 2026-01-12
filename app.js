@@ -1,3 +1,6 @@
+/*************************************************
+ * CONFIG
+ *************************************************/
 const EDIT_PASSWORD = "1234";
 const STORAGE_KEY = "warehouse_dashboard_v3";
 const WAREHOUSE_TOTAL = 14;
@@ -6,6 +9,9 @@ const MAX_POINTS = 60;
 
 const API_URL = "https://warehouse-backend-n4yp.onrender.com/api/latest";
 
+/*************************************************
+ * API
+ *************************************************/
 async function fetchLatestSensor() {
   try {
     const res = await fetch(API_URL);
@@ -17,7 +23,9 @@ async function fetchLatestSensor() {
   }
 }
 
-/* ===== DEFAULT WAREHOUSES ===== */
+/*************************************************
+ * DEFAULT DATA
+ *************************************************/
 const DEFAULT_WAREHOUSES = [
   { name: "uvs", image: "uvs.png" },
   { name: "East Warehouse", image: "east.png" },
@@ -35,14 +43,12 @@ const DEFAULT_WAREHOUSES = [
   { name: "Backup Warehouse", image: "backup.png" }
 ];
 
-/* ===== SENSOR DEF ===== */
 const SENSOR_DEF = [
   ...Array.from({ length: 8 }, (_, i) => ({ id: "W" + (i + 1), group: "warehouse" })),
   ...Array.from({ length: 5 }, (_, i) => ({ id: "O" + (i + 1), group: "office" })),
   { id: "G1", group: "garage" }
 ];
 
-/* ===== DEFAULT SENSOR LAYOUT ===== */
 function defaultSensors() {
   return SENSOR_DEF.map((s, i) => ({
     id: s.id,
@@ -53,7 +59,9 @@ function defaultSensors() {
   }));
 }
 
-/* ===== LOAD / INIT ===== */
+/*************************************************
+ * STORAGE
+ *************************************************/
 function loadWarehouses() {
   const saved = localStorage.getItem(STORAGE_KEY);
   if (saved) return JSON.parse(saved);
@@ -77,7 +85,9 @@ function saveWarehouses() {
 let warehouses = loadWarehouses();
 let currentKey = "wh1";
 
-/* ===== ELEMENTS ===== */
+/*************************************************
+ * ELEMENTS
+ *************************************************/
 const body = document.body;
 const editBtn = document.getElementById("editToggle");
 const nameInput = document.getElementById("warehouseNameInput");
@@ -90,7 +100,9 @@ const dropdownHeader = document.getElementById("dropdownHeader");
 const dropdownList = document.getElementById("dropdownList");
 const selectedText = document.getElementById("selectedWarehouse");
 
-/* ===== EDIT MODE ===== */
+/*************************************************
+ * EDIT MODE
+ *************************************************/
 let editMode = false;
 editBtn.onclick = () => {
   if (!editMode) {
@@ -102,7 +114,9 @@ editBtn.onclick = () => {
   editBtn.textContent = editMode ? "Edit mode: ON" : "Edit mode: OFF";
 };
 
-/* ===== DROPDOWN ===== */
+/*************************************************
+ * DROPDOWN
+ *************************************************/
 function renderDropdown() {
   dropdownList.innerHTML = "";
   Object.keys(warehouses).forEach(k => {
@@ -118,7 +132,9 @@ function renderDropdown() {
 dropdownHeader.onclick = () =>
   dropdown.classList.toggle("dropdown-open");
 
-/* ===== LOAD WAREHOUSE ===== */
+/*************************************************
+ * LOAD WAREHOUSE
+ *************************************************/
 function loadWarehouse(key) {
   currentKey = key;
   const wh = warehouses[key];
@@ -140,28 +156,9 @@ function loadWarehouse(key) {
   });
 }
 
-/* ===== NAME ===== */
-nameInput.oninput = () => {
-  if (!editMode) return;
-  warehouses[currentKey].name = nameInput.value;
-  selectedText.textContent = nameInput.value;
-  saveWarehouses();
-  renderDropdown();
-};
-
-/* ===== IMAGE ===== */
-imageUpload.onchange = e => {
-  if (!editMode) return;
-  const r = new FileReader();
-  r.onload = () => {
-    warehouses[currentKey].image = r.result;
-    floorImage.src = r.result;
-    saveWarehouses();
-  };
-  r.readAsDataURL(e.target.files[0]);
-};
-
-/* ===== DRAG ===== */
+/*************************************************
+ * DRAG
+ *************************************************/
 function enableDrag(el, data) {
   let dragging = false, ox = 0, oy = 0;
 
@@ -189,7 +186,9 @@ function enableDrag(el, data) {
   });
 }
 
-/* ===== GRAPH + FAKE TEMP UPDATE ===== */
+/*************************************************
+ * CHART
+ *************************************************/
 const ctx = document.getElementById("avgChart");
 const labels = [], w = [], o = [], g = [];
 let lastSensorTemps = [];
@@ -210,37 +209,42 @@ const chart = new Chart(ctx, {
     plugins: {
       tooltip: {
         callbacks: {
-          afterBody: () =>
-            lastSensorTemps.map(s => `${s.id} : ${s.temp.toFixed(1)} °C`)
+          afterBody: () => lastSensorTemps.map(s => `${s.id} : ${s.temp}`)
         }
       }
     }
   }
 });
 
+/*************************************************
+ * UPDATE (NO NaN GUARANTEED)
+ *************************************************/
 async function updateGraph() {
   const wh = warehouses[currentKey];
-  let ws=[], os=[], gs=[];
+  let ws = [], os = [], gs = [];
   lastSensorTemps = [];
 
   const apiData = await fetchLatestSensor();
-if (!apiData) return;
-  
+  if (!apiData) return;
+
+  const t = parseFloat(apiData.temperature);
+  const valid = !isNaN(t);
+
   wh.sensors.forEach(s => {
-    const t = parseFloat(apiData.temperature);
-    s.temp = isNaN(t) ? "--" : t.toFixed(1) + "°C";
+    s.temp = valid ? t.toFixed(1) + "°C" : "--";
 
-    lastSensorTemps.push({ id: s.id, temp: t });
+    lastSensorTemps.push({
+      id: s.id,
+      temp: s.temp
+    });
 
-    if (s.group === "warehouse") ws.push(t);
-    if (s.group === "office") os.push(t);
-    if (s.group === "garage") gs.push(t);
+    if (valid && s.group === "warehouse") ws.push(t);
+    if (valid && s.group === "office") os.push(t);
+    if (valid && s.group === "garage") gs.push(t);
   });
 
-  // sensor дээр бичиг шинэчлэх
-  document.querySelectorAll(".sensor").forEach((el, i) => {
-    const span = el.querySelector("span");
-    if (span) span.textContent = wh.sensors[i].temp;
+  document.querySelectorAll(".sensor span").forEach((el, i) => {
+    el.textContent = wh.sensors[i].temp;
   });
 
   const avg = a => a.length ? (a.reduce((x,y)=>x+y,0)/a.length).toFixed(1) : null;
@@ -258,14 +262,10 @@ if (!apiData) return;
   saveWarehouses();
 }
 
+/*************************************************
+ * START
+ *************************************************/
 setInterval(updateGraph, INTERVAL_MS);
 updateGraph();
-
-/* ===== START ===== */
 renderDropdown();
 loadWarehouse(currentKey);
-
-
-
-
-
