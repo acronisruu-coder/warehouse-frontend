@@ -8,7 +8,7 @@ const MAX_POINTS = 60;
 const API_URL = "https://warehouse-backend-n4yp.onrender.com/api/latest";
 
 /* =========================
-   LOAD / INIT
+   DEFAULT DATA
 ========================= */
 function defaultSensors() {
   return [
@@ -29,6 +29,7 @@ function loadWarehouses() {
       sensors: defaultSensors()
     }
   };
+
   localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
   return data;
 }
@@ -48,7 +49,6 @@ const editBtn = document.getElementById("editToggle");
 const floor = document.getElementById("floor");
 const floorImage = document.getElementById("floorImage");
 const selectedText = document.getElementById("selectedWarehouse");
-
 const dropdown = document.querySelector(".warehouse-dropdown");
 const dropdownHeader = document.getElementById("dropdownHeader");
 const dropdownList = document.getElementById("dropdownList");
@@ -64,51 +64,4 @@ editBtn.onclick = () => {
   }
   editMode = !editMode;
   body.className = editMode ? "edit-mode" : "view-mode";
-  editBtn.textContent = editMode ? "Edit mode: ON" : "Edit mode: OFF";
-};
-
-/* =========================
-   DROPDOWN
-========================= */
-function renderDropdown() {
-  dropdownList.innerHTML = "";
-  Object.keys(warehouses).forEach(k => {
-    const d = document.createElement("div");
-    d.className = "dropdown-item";
-    d.textContent = warehouses[k].name;
-    d.onclick = e => {
-      e.stopPropagation();
-      loadWarehouse(k);
-      dropdown.classList.remove("dropdown-open");
-    };
-    dropdownList.appendChild(d);
-  });
-}
-
-dropdownHeader.onclick = e => {
-  e.stopPropagation();
-  dropdown.classList.toggle("dropdown-open");
-};
-
-document.onclick = () => dropdown.classList.remove("dropdown-open");
-
-/* =========================
-   LOAD WAREHOUSE
-========================= */
-function loadWarehouse(key) {
-  currentKey = key;
-  const wh = warehouses[key];
-
-  selectedText.textContent = wh.name;
-  floorImage.src = wh.image;
-
-  document.querySelectorAll(".sensor").forEach(s => s.remove());
-
-  wh.sensors.forEach(s => {
-    const el = document.createElement("div");
-    el.className = `sensor ${s.group}`;
-    el.id = s.id;
-    el.innerHTML = `${s.id}<br><span>${s.temp}</span>`;
-    el.style.left = s.x + "%";
-    el.style.top = s.y + "%";
-    floor
+  editBtn.textContent = editMode ? "Edit mo
