@@ -6,6 +6,19 @@ const MAX_POINTS = 60;
 
 const API_URL = "https://warehouse-backend-n4yp.onrender.com/api/latest";
 
+async function fetchLatestSensor() {
+  try {
+    const res = await fetch(API_URL);
+    if (!res.ok) throw new Error("API response error");
+    return await res.json();
+  } catch (err) {
+    console.error("Fetch API failed:", err);
+    return null;
+  }
+}
+
+const API_URL = "https://warehouse-backend-n4yp.onrender.com/api/latest";
+
 /* ===== DEFAULT WAREHOUSES ===== */
 const DEFAULT_WAREHOUSES = [
   { name: "uvs", image: "uvs.png" },
@@ -253,5 +266,6 @@ updateGraph();
 /* ===== START ===== */
 renderDropdown();
 loadWarehouse(currentKey);
+
 
 
