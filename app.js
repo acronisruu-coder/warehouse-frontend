@@ -20,7 +20,9 @@ async function fetchLatestSensor() {
     if (!res.ok) throw new Error("API error");
     const arr = await res.json();
     if (!Array.isArray(arr)) return null;
-    return arr.find(d => d.device_id === DEVICE_ID) || null;
+
+    const g1 = arr.find(d => d.device_id === DEVICE_ID);
+    return g1 || null;
   } catch (e) {
     console.error("API fetch failed", e);
     return null;
@@ -68,18 +70,22 @@ const selectedText = document.getElementById("selectedWarehouse");
  *************************************************/
 function loadWarehouse() {
   const wh = warehouses[currentKey];
+
   selectedText.textContent = wh.name;
   floorImage.src = wh.image;
 
-  document.querySelectorAll(".sensor").forEach(s => s.remove());
+  document.querySelectorAll(".sensor").forEach(el => el.remove());
 
   wh.sensors.forEach(s => {
     const el = document.createElement("div");
     el.className = `sensor ${s.group}`;
     el.id = s.id;
-    el.innerHTML = `${s.id}<br><span>${s.temp}</span>`;
     el.style.left = s.x + "%";
     el.style.top = s.y + "%";
+    el.innerHTML = `
+      ${s.id}<br>
+      <span>${s.temp}</span>
+    `;
     floor.appendChild(el);
   });
 }
@@ -88,16 +94,17 @@ function loadWarehouse() {
  * CHART – G1 HISTORY
  *************************************************/
 const ctx = document.getElementById("avgChart");
+
 const labels = [];
 const g = [];
 
 const chart = new Chart(ctx, {
   type: "line",
   data: {
-    labels,
+    labels: labels,
     datasets: [
       {
-        label: "Garage Avg (G1)",
+        label: "Garage (G1)",
         data: g,
         borderColor: "#9b59b6",
         tension: 0.3
@@ -106,12 +113,17 @@ const chart = new Chart(ctx, {
   },
   options: {
     responsive: true,
-    animation: false
+    animation: false,
+    scales: {
+      y: {
+        beginAtZero: false
+      }
+    }
   }
 });
 
 /*************************************************
- * UPDATE – SENSOR + GRAPH
+ * UPDATE – SENSOR + GRAPH (FIXED)
  *************************************************/
 async function updateData() {
   const wh = warehouses[currentKey];
@@ -121,28 +133,35 @@ async function updateData() {
   const t = parseFloat(apiData.temperature);
   if (isNaN(t)) return;
 
-  // SENSOR UI
+  // RESET ALL
   wh.sensors.forEach(s => (s.temp = "--"));
+
+  // UPDATE G1
   const g1 = wh.sensors.find(s => s.id === DEVICE_ID);
   if (g1) g1.temp = t.toFixed(1) + "°C";
 
-  document.querySelectorAll(".sensor span").forEach((el, i) => {
-    el.textContent = wh.sensors[i].temp;
+  // UPDATE DOM (ID-аар)
+  wh.sensors.forEach(s => {
+    const el = document.getElementById(s.id);
+    if (el) {
+      el.querySelector("span").textContent = s.temp;
+    }
   });
 
-  // GRAPH
-  if (labels.length > MAX_POINTS) {
+  // UPDATE CHART
+  if (labels.length >= MAX_POINTS) {
     labels.shift();
     g.shift();
   }
 
   labels.push(new Date().toLocaleTimeString());
-  g.push(t.toFixed(1));
+  g.push(Number(t.toFixed(1)));
+
   chart.update("none");
 }
 
 /*************************************************
- * START  ✅ ЭНЭ ХЭСЭГ Л ДУТУУ БАЙСАН
+ * START
  *************************************************/
 loadWarehouse();
 updateData();
