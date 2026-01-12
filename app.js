@@ -12,17 +12,26 @@ const API_URL = "https://warehouse-backend-n4yp.onrender.com/api/latest";
 const DEVICE_ID = "G1";
 
 /*************************************************
- * API – G1 ONLY
+ * API – G1 ONLY (FIXED)
  *************************************************/
 async function fetchLatestSensor() {
   try {
     const res = await fetch(API_URL);
     if (!res.ok) throw new Error("API error");
+
     const arr = await res.json();
+    console.log("API RAW:", arr);
+
     if (!Array.isArray(arr)) return null;
 
-    const g1 = arr.find(d => d.device_id === DEVICE_ID);
-    return g1 || null;
+    return (
+      arr.find(
+        d =>
+          d.device_id === DEVICE_ID ||
+          d.sensor_id === DEVICE_ID ||
+          d.device === DEVICE_ID
+      ) || null
+    );
   } catch (e) {
     console.error("API fetch failed", e);
     return null;
@@ -57,6 +66,7 @@ const warehouses = {
 };
 
 let currentKey = "wh1";
+let editMode = false;
 
 /*************************************************
  * ELEMENTS
@@ -64,6 +74,8 @@ let currentKey = "wh1";
 const floor = document.getElementById("floor");
 const floorImage = document.getElementById("floorImage");
 const selectedText = document.getElementById("selectedWarehouse");
+const warehouseSelect = document.getElementById("warehouseSelect");
+const editBtn = document.getElementById("editBtn");
 
 /*************************************************
  * LOAD WAREHOUSE
@@ -82,11 +94,35 @@ function loadWarehouse() {
     el.id = s.id;
     el.style.left = s.x + "%";
     el.style.top = s.y + "%";
-    el.innerHTML = `
-      ${s.id}<br>
-      <span>${s.temp}</span>
-    `;
+    el.innerHTML = `${s.id}<br><span>${s.temp}</span>`;
+
     floor.appendChild(el);
+  });
+}
+
+/*************************************************
+ * WAREHOUSE SELECT (FIXED)
+ *************************************************/
+if (warehouseSelect) {
+  warehouseSelect.addEventListener("change", e => {
+    currentKey = e.target.value;
+    loadWarehouse();
+  });
+}
+
+/*************************************************
+ * EDIT MODE BUTTON (FIXED)
+ *************************************************/
+if (editBtn) {
+  editBtn.addEventListener("click", () => {
+    const pwd = prompt("Edit password:");
+    if (pwd !== EDIT_PASSWORD) {
+      alert("Wrong password");
+      return;
+    }
+
+    editMode = !editMode;
+    alert("Edit mode: " + (editMode ? "ON" : "OFF"));
   });
 }
 
@@ -94,14 +130,13 @@ function loadWarehouse() {
  * CHART – G1 HISTORY
  *************************************************/
 const ctx = document.getElementById("avgChart");
-
 const labels = [];
 const g = [];
 
 const chart = new Chart(ctx, {
   type: "line",
   data: {
-    labels: labels,
+    labels,
     datasets: [
       {
         label: "Garage (G1)",
@@ -113,17 +148,12 @@ const chart = new Chart(ctx, {
   },
   options: {
     responsive: true,
-    animation: false,
-    scales: {
-      y: {
-        beginAtZero: false
-      }
-    }
+    animation: false
   }
 });
 
 /*************************************************
- * UPDATE – SENSOR + GRAPH (FIXED)
+ * UPDATE – SENSOR + GRAPH (FINAL FIX)
  *************************************************/
 async function updateData() {
   const wh = warehouses[currentKey];
@@ -133,22 +163,20 @@ async function updateData() {
   const t = parseFloat(apiData.temperature);
   if (isNaN(t)) return;
 
-  // RESET ALL
+  // RESET
   wh.sensors.forEach(s => (s.temp = "--"));
 
-  // UPDATE G1
+  // G1
   const g1 = wh.sensors.find(s => s.id === DEVICE_ID);
   if (g1) g1.temp = t.toFixed(1) + "°C";
 
-  // UPDATE DOM (ID-аар)
+  // DOM
   wh.sensors.forEach(s => {
     const el = document.getElementById(s.id);
-    if (el) {
-      el.querySelector("span").textContent = s.temp;
-    }
+    if (el) el.querySelector("span").textContent = s.temp;
   });
 
-  // UPDATE CHART
+  // CHART
   if (labels.length >= MAX_POINTS) {
     labels.shift();
     g.shift();
