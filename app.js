@@ -269,3 +269,23 @@ setInterval(updateGraph, INTERVAL_MS);
 updateGraph();
 renderDropdown();
 loadWarehouse(currentKey);
+async function updateG1() {
+  try {
+    const res = await fetch(API_URL);
+    const data = await res.json();
+
+    const g1 = data.find(d => d.warehouse === "G1");
+    if (!g1) return;
+
+    const el = document.getElementById("G1");
+    if (!el) return;
+
+    el.textContent = `G1 ${g1.temperature}°C`;
+  } catch (e) {
+    console.error("G1 update error", e);
+  }
+}
+
+updateG1();
+setInterval(updateG1, 5000);
+
