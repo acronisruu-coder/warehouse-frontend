@@ -24,24 +24,6 @@ const DEFAULT_WAREHOUSES = [
   { name: "Backup Warehouse", image: "backup.png" }
 ];
 
-/* ===== SENSOR DEF ===== */
-const SENSOR_DEF = [
-  ...Array.from({ length: 8 }, (_, i) => ({ id: "W" + (i + 1), group: "warehouse" })),
-  ...Array.from({ length: 5 }, (_, i) => ({ id: "O" + (i + 1), group: "office" })),
-  { id: "G1", group: "garage" }
-];
-
-/* ===== DEFAULT SENSOR LAYOUT ===== */
-function defaultSensors() {
-  return SENSOR_DEF.map((s, i) => ({
-    id: s.id,
-    group: s.group,
-    x: 6 + (i % 7) * 13,
-    y: 18 + Math.floor(i / 7) * 18,
-    temp: "--"
-  }));
-}
-
 /* ===== LOAD / INIT ===== */
 function loadWarehouses() {
   const saved = localStorage.getItem(STORAGE_KEY);
@@ -265,3 +247,4 @@ updateGraph();
 /* ===== START ===== */
 renderDropdown();
 loadWarehouse(currentKey);
+
