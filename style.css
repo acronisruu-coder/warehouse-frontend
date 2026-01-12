@@ -1,0 +1,141 @@
+body {
+  margin: 0;
+  padding: 16px;
+  font-family: Arial, sans-serif;
+  background: #f2f2f2;
+}
+
+/* ===== EDIT BAR ===== */
+#editBar {
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  z-index: 99999;
+}
+
+.edit-btn {
+  padding: 10px 14px;
+  border-radius: 6px;
+  border: none;
+  background: #444;
+  color: white;
+  cursor: pointer;
+}
+
+.edit-btn.active {
+  background: #e67e22;
+}
+
+/* ===== WAREHOUSE DROPDOWN ===== */
+.warehouse-dropdown {
+  width: 260px;
+  margin-bottom: 10px;
+  position: relative;
+  z-index: 100;
+  user-select: none;
+}
+
+.dropdown-header {
+  background: white;
+  padding: 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.dropdown-list {
+  position: absolute;
+  top: 110%;
+  left: 0;
+  right: 0;
+  background: white;
+  border-radius: 6px;
+  max-height: 260px;
+  overflow-y: auto;
+  display: none;
+}
+
+.dropdown-list div {
+  padding: 8px 10px;
+  cursor: pointer;
+}
+
+.dropdown-list div:hover {
+  background: #eee;
+}
+
+.dropdown-open .dropdown-list {
+  display: block;
+}
+
+/* ===== EDIT CONTROLS ===== */
+.edit-controls {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.view-mode .edit-controls {
+  display: none;
+}
+
+/* ===== FLOOR IMAGE ===== */
+.floor {
+  position: relative;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.floor img {
+  width: 100%;
+  height: auto;
+  display: block;
+  pointer-events: none;
+}
+
+/* ===== SENSOR ===== */
+.sensor {
+  position: absolute;
+  width: clamp(26px, 3.5vw, 42px);
+  height: clamp(26px, 3.5vw, 42px);
+  border-radius: 50%;
+  color: white;
+  font-size: 10px;
+  display: flex;
+  flex-direction: column;       /* 👈 нэр дээр, temp доор */
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+  line-height: 1.1;
+}
+
+.sensor span {
+  font-size: 9px;               /* temp жижиг */
+  margin-top: 2px;              /* нэрнээс доош */
+  opacity: 0.9;
+}
+
+/* SENSOR COLORS */
+.sensor.warehouse { background: #3498db; }
+.sensor.office   { background: #2ecc71; }
+.sensor.garage   { background: #9b59b6; }
+
+/* CURSOR */
+.view-mode .sensor {
+  cursor: default;
+}
+
+.edit-mode .sensor {
+  cursor: grab;
+}
+
+/* ===== GRAPH ===== */
+.chart-box {
+  margin-top: 14px;
+  background: white;
+  border-radius: 8px;
+  padding: 8px;
+  max-width: 1000px;
+}
