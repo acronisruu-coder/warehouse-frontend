@@ -139,3 +139,16 @@ body {
   padding: 8px;
   max-width: 1000px;
 }
+/* ===== CLICK FIX (FINAL) ===== */
+
+/* UI elements always on top */
+#editBar,
+.warehouse-dropdown {
+  position: relative;
+  z-index: 100000;
+}
+
+/* floor must stay under UI */
+.floor {
+  z-index: 1;
+}
