@@ -207,7 +207,7 @@ const chart = new Chart(ctx, {
   }
 });
 
-function updateGraph() {
+async function updateGraph() {
   const wh = warehouses[currentKey];
   let ws=[], os=[], gs=[];
   lastSensorTemps = [];
@@ -250,3 +250,4 @@ updateGraph();
 /* ===== START ===== */
 renderDropdown();
 loadWarehouse(currentKey);
+
