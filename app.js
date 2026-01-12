@@ -1,4 +1,5 @@
 console.log("APP.JS LOADED");
+
 /*************************************************
  * CONFIG
  *************************************************/
@@ -11,13 +12,15 @@ const MAX_POINTS = 60;
 const API_URL = "https://warehouse-backend-n4yp.onrender.com/api/latest";
 
 /*************************************************
- * API
+ * API (ARRAY → LAST RECORD)
  *************************************************/
 async function fetchLatestSensor() {
   try {
     const res = await fetch(API_URL);
     if (!res.ok) throw new Error("API response error");
-    return await res.json();
+    const arr = await res.json();
+    if (!Array.isArray(arr) || arr.length === 0) return null;
+    return arr[0]; // хамгийн сүүлийн бичлэг
   } catch (err) {
     console.error("Fetch API failed:", err);
     return null;
@@ -134,7 +137,7 @@ dropdownHeader.onclick = () =>
   dropdown.classList.toggle("dropdown-open");
 
 /*************************************************
- * LOAD WAREHOUSE
+ * LOAD WAREHOUSE (ID ASSIGNED!)
  *************************************************/
 function loadWarehouse(key) {
   currentKey = key;
@@ -149,6 +152,7 @@ function loadWarehouse(key) {
   wh.sensors.forEach(s => {
     const el = document.createElement("div");
     el.className = `sensor ${s.group}`;
+    el.id = s.id; // ★ МАШ ЧУХАЛ
     el.innerHTML = `${s.id}<br><span>${s.temp}</span>`;
     el.style.left = s.x + "%";
     el.style.top = s.y + "%";
@@ -218,7 +222,7 @@ const chart = new Chart(ctx, {
 });
 
 /*************************************************
- * UPDATE (NO NaN GUARANTEED)
+ * UPDATE (ARRAY-SAFE)
  *************************************************/
 async function updateGraph() {
   const wh = warehouses[currentKey];
@@ -234,10 +238,7 @@ async function updateGraph() {
   wh.sensors.forEach(s => {
     s.temp = valid ? t.toFixed(1) + "°C" : "--";
 
-    lastSensorTemps.push({
-      id: s.id,
-      temp: s.temp
-    });
+    lastSensorTemps.push({ id: s.id, temp: s.temp });
 
     if (valid && s.group === "warehouse") ws.push(t);
     if (valid && s.group === "office") os.push(t);
@@ -270,24 +271,3 @@ setInterval(updateGraph, INTERVAL_MS);
 updateGraph();
 renderDropdown();
 loadWarehouse(currentKey);
-async function updateG1() {
-  try {
-    const res = await fetch(API_URL);
-    const data = await res.json();
-
-    const g1 = data.find(d => d.warehouse === "G1");
-    if (!g1) return;
-
-    const el = document.getElementById("G1");
-    if (!el) return;
-
-    el.textContent = `G1 ${g1.temperature}°C`;
-  } catch (e) {
-    console.error("G1 update error", e);
-  }
-}
-
-updateG1();
-setInterval(updateG1, 5000);
-
-
