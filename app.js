@@ -8,6 +8,10 @@ const API_URL = "https://warehouse-backend-n4yp.onrender.com/api/latest";
 
 /* ===== TIME RANGE ===== */
 let currentRange = "hour"; // minute | hour | day
+function setRange(r) {
+  currentRange = r;
+  updateGraph();
+}
 
 /* ===== DEFAULT WAREHOUSES ===== */
 const DEFAULT_WAREHOUSES = [
@@ -34,7 +38,6 @@ const SENSOR_DEF = [
   { id: "G1", group: "garage" }
 ];
 
-/* ===== DEFAULT SENSOR LAYOUT ===== */
 function defaultSensors() {
   return SENSOR_DEF.map((s, i) => ({
     id: s.id,
@@ -104,4 +107,145 @@ function renderDropdown() {
       loadWarehouse(k);
       dropdown.classList.remove("dropdown-open");
     };
-    dropdownList.appendChild
+    dropdownList.appendChild(d);
+  });
+}
+dropdownHeader.onclick = () =>
+  dropdown.classList.toggle("dropdown-open");
+
+/* ===== LOAD WAREHOUSE ===== */
+function loadWarehouse(key) {
+  currentKey = key;
+  const wh = warehouses[key];
+
+  selectedText.textContent = wh.name;
+  nameInput.value = wh.name;
+  floorImage.src = wh.image;
+
+  document.querySelectorAll(".sensor").forEach(s => s.remove());
+
+  wh.sensors.forEach(s => {
+    const el = document.createElement("div");
+    el.className = `sensor ${s.group}`;
+    el.innerHTML = `${s.id}<br><span>${s.temp}</span>`;
+    el.style.left = s.x + "%";
+    el.style.top = s.y + "%";
+    floor.appendChild(el);
+    enableDrag(el, s);
+  });
+}
+
+/* ===== DRAG ===== */
+function enableDrag(el, data) {
+  let dragging = false, ox = 0, oy = 0;
+
+  el.addEventListener("mousedown", e => {
+    if (!editMode) return;
+    dragging = true;
+    ox = e.offsetX;
+    oy = e.offsetY;
+  });
+
+  document.addEventListener("mousemove", e => {
+    if (!dragging) return;
+    const r = floor.getBoundingClientRect();
+    data.x = ((e.clientX - r.left - ox) / r.width) * 100;
+    data.y = ((e.clientY - r.top - oy) / r.height) * 100;
+    el.style.left = data.x + "%";
+    el.style.top = data.y + "%";
+  });
+
+  document.addEventListener("mouseup", () => {
+    if (dragging) {
+      dragging = false;
+      saveWarehouses();
+    }
+  });
+}
+
+/* ===== GRAPH (REAL DATA) ===== */
+const ctx = document.getElementById("avgChart");
+const labels = [], w = [], o = [], g = [];
+let lastSensorTemps = [];
+
+const chart = new Chart(ctx, {
+  type: "line",
+  data: {
+    labels,
+    datasets: [
+      { label: "Warehouse Avg", data: w },
+      { label: "Office Avg", data: o },
+      { label: "Garage Avg", data: g }
+    ]
+  },
+  options: { responsive: true, animation: false }
+});
+
+function filterByRange(data) {
+  const now = Date.now();
+
+  return data.filter(d => {
+    if (!d.created_at) return false;
+
+    // API-аас ирдэг формат: "YYYY-MM-DD HH:mm:ss"
+    // Улаанбаатарын цаг (+08:00) гэж тодорхой зааж өгнө
+    const t = new Date(
+      d.created_at.replace(" ", "T") + "+08:00"
+    ).getTime();
+
+    if (isNaN(t)) return false;
+
+    if (currentRange === "minute") return now - t <= 60 * 1000;
+    if (currentRange === "hour")   return now - t <= 60 * 60 * 1000;
+    if (currentRange === "day")    return now - t <= 24 * 60 * 60 * 1000;
+
+    return false;
+  });
+}
+
+async function updateGraph() {
+  const res = await fetch(API_URL);
+  let data = await res.json();
+  data = filterByRange(data);
+
+  const wh = warehouses[currentKey];
+  lastSensorTemps = [];
+
+  const ws=[], os=[], gs=[];
+
+  wh.sensors.forEach(s => {
+    const d = data.find(x => x.sensor_id === s.id);
+    if (!d) return;
+
+    s.temp = d.temperature + "°C";
+    lastSensorTemps.push({ id: s.id, temp: d.temperature });
+
+    if (s.group === "warehouse") ws.push(d.temperature);
+    if (s.group === "office") os.push(d.temperature);
+    if (s.group === "garage") gs.push(d.temperature);
+  });
+
+  document.querySelectorAll(".sensor span").forEach((el, i) => {
+    el.textContent = wh.sensors[i].temp;
+  });
+
+  const avg = a => a.length ? (a.reduce((x,y)=>x+y,0)/a.length).toFixed(1) : null;
+
+  if (labels.length > MAX_POINTS) {
+    labels.shift(); w.shift(); o.shift(); g.shift();
+  }
+
+  labels.push(new Date().toLocaleTimeString());
+  w.push(avg(ws));
+  o.push(avg(os));
+  g.push(avg(gs));
+
+  chart.update("none");
+}
+
+setInterval(updateGraph, INTERVAL_MS);
+updateGraph();
+
+/* ===== START ===== */
+renderDropdown();
+loadWarehouse(currentKey);
