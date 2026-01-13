@@ -1,28 +1,52 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Warehouse Sensor Dashboard</title>
+  <meta charset="UTF-8">
+  <title>Warehouse Temperature Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="style.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <style>
-    body { font-family: Arial; padding: 20px; }
-    button { margin-right: 8px; padding: 6px 12px; }
-    .toolbar { margin-bottom: 15px; }
-    .status { margin-left: 15px; font-weight: bold; }
-  </style>
 </head>
-<body>
 
-  <h2>G1 Sensor – Temperature</h2>
+<body class="view-mode">
 
-  <div class="toolbar">
+<div id="editBar">
+  <button id="editToggle" class="edit-btn">Edit mode: OFF</button>
+</div>
+
+<h2>Temperature Monitoring Dashboard</h2>
+
+<div class="warehouse-dropdown">
+  <div id="dropdownHeader" class="dropdown-header">
+    <span id="selectedWarehouse">Warehouse 1</span>
+    <span class="arrow">▼</span>
+  </div>
+  <div id="dropdownList" class="dropdown-list"></div>
+</div>
+
+<div class="edit-controls">
+  <input id="warehouseNameInput" placeholder="Warehouse name">
+  <input type="file" id="imageUpload" accept="image/*">
+</div>
+
+<div id="floor" class="floor">
+  <img id="floorImage">
+</div>
+
+<!-- 🔽 ЗӨВХӨН GRAPH ХЭСЭГ ШИНЭЧИЛСЭН -->
+<div class="chart-box">
+
+  <!-- Time range controls -->
+  <div class="chart-controls">
     <button onclick="setRange('minute')">Minute</button>
     <button onclick="setRange('hour')">Hour</button>
     <button onclick="setRange('day')">Day</button>
   </div>
 
-  <canvas id="chart" height="100"></canvas>
+  <canvas id="avgChart"></canvas>
+</div>
+<!-- 🔼 ЭНД ХҮРТЭЛ -->
 
-  <script src="app.js"></script>
+<script src="app.js"></script>
 </body>
 </html>
