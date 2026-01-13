@@ -1,42 +1,28 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Warehouse Temperature Dashboard</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <title>Warehouse Sensor Dashboard</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body { font-family: Arial; padding: 20px; }
+    button { margin-right: 8px; padding: 6px 12px; }
+    .toolbar { margin-bottom: 15px; }
+    .status { margin-left: 15px; font-weight: bold; }
+  </style>
 </head>
+<body>
 
-<body class="view-mode">
+  <h2>G1 Sensor – Temperature</h2>
 
-<div id="editBar">
-  <button id="editToggle" class="edit-btn">Edit mode: OFF</button>
-</div>
-
-<h2>Temperature Monitoring Dashboard</h2>
-
-<div class="warehouse-dropdown">
-  <div id="dropdownHeader" class="dropdown-header">
-    <span id="selectedWarehouse">Warehouse 1</span>
-    <span class="arrow">▼</span>
+  <div class="toolbar">
+    <button onclick="setRange('minute')">Minute</button>
+    <button onclick="setRange('hour')">Hour</button>
+    <button onclick="setRange('day')">Day</button>
   </div>
-  <div id="dropdownList" class="dropdown-list"></div>
-</div>
 
-<div class="edit-controls">
-  <input id="warehouseNameInput" placeholder="Warehouse name">
-  <input type="file" id="imageUpload" accept="image/*">
-</div>
+  <canvas id="chart" height="100"></canvas>
 
-<div id="floor" class="floor">
-  <img id="floorImage">
-</div>
-
-<div class="chart-box">
-  <canvas id="avgChart"></canvas>
-</div>
-
-<script src="app.js"></script>
+  <script src="app.js"></script>
 </body>
 </html>
